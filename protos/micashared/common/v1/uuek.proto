@@ -1,0 +1,24 @@
+// Copyright (c) 2022-2024 Mica. All rights reserved. All software, including, without limitation, all source
+// code and object code, is the intellectual property of Mica, Inc. and is protected by copyright, trademark and
+// other intellectual property laws (collective "Mica Software"). You may not use, copy, reproduce, download, store,
+// post, broadcast, transmit, modify, sell or make available to the public content from the Mica Software without a
+// valid license or the prior written approval of Mica, Inc. Mica, its logos, slogans, taglines,
+// products, feature names, and other trademarks are trademarks of Mica, Inc. and may not be used without
+// permission.
+
+syntax = "proto3";
+
+package micashared.common.v1;
+
+option go_package = "micashared/common/v1;commonv1";
+option java_outer_classname = "UUEKProto";
+option java_package = "io.micashared.common.v1";
+option objc_class_prefix = "MICA";
+
+// Details about the instrument behind a UUEK that do not change between transactions. A UUEK changes, but these
+// values stay the same, so they can be used to recognise the same underlying instrument across transactions.
+message ImmutableInstrumentDetails {
+  // Stable identifier of the instrument: 64 lowercase hexadecimal characters, the same for every transaction made
+  // with that instrument. It cannot be used to make a payment.
+  string identifier = 1;
+}

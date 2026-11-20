@@ -1,0 +1,133 @@
+// Copyright (c) 2022-2024 Mica. All rights reserved. All software, including, without limitation, all source
+// code and object code, is the intellectual property of Mica, Inc. and is protected by copyright, trademark and
+// other intellectual property laws (collective "Mica Software"). You may not use, copy, reproduce, download, store,
+// post, broadcast, transmit, modify, sell or make available to the public content from the Mica Software without a
+// valid license or the prior written approval of Mica, Inc. Mica, its logos, slogans, taglines,
+// products, feature names, and other trademarks are trademarks of Mica, Inc. and may not be used without
+// permission.
+
+syntax = "proto3";
+
+package micashared.common.v1;
+
+import "micashared/common/v1/error.proto";
+import "validate/validate.proto";
+
+option go_package = "micashared/common/v1;commonv1";
+option java_outer_classname = "AuthenitcationTokenProto";
+option java_package = "io.micashared.common.v1";
+option objc_class_prefix = "MICA";
+
+// Where Mica puts the API token on its requests to a member.
+message AuthenticationHeaderConfiguration {
+  // Name of the request header (gRPC metadata key) that carries the token, 1 to 20 characters; usually
+  // "authorization". gRPC and HTTP/2 require lowercase header names, so Mica lowercases the value.
+  string header_key = 1 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 20
+  }];
+
+  // Text placed before the token in the header value, up to 30 characters; typically "Bearer". Case is kept as given.
+  // When set, the header value is "<header_value_prefix> <token>", with a single space between them. When empty, the
+  // header value is the token alone.
+  string header_value_prefix = 2 [(validate.rules).string.max_len = 30];
+}
+
+// API token authentication for Mica's calls to a member: Mica sends a fixed token in a request header. Because the
+// token travels in a header, Mica only sends it over TLS, so a CA certificate chain for verifying the member's server
+// certificate is required.
+message ApiTokenConfiguration {
+  // Which header carries the token and how its value is formed.
+  AuthenticationHeaderConfiguration header_configuration = 2 [(validate.rules).message.required = true];
+
+  // The token Mica sends. Returned in clear text, so protect responses that contain it.
+  string api_token_value = 3 [(validate.rules).string.min_len = 1];
+
+  // PEM-encoded CA certificates Mica uses to verify the member endpoint's server certificate. At least one entry is
+  // required.
+  repeated string pem_ca_chain = 4 [(validate.rules).repeated.min_items = 1];
+}
+
+// Request to set up API token authentication for Mica's calls to the member. This replaces any existing token
+// configuration and switches Mica to API token authentication.
+message CreateApiTokenConfigurationRequest {
+  // Which header carries the token and how its value is formed.
+  AuthenticationHeaderConfiguration header_configuration = 1 [(validate.rules).message.required = true];
+  // The token Mica should send.
+  string api_token_value = 2 [(validate.rules).string.min_len = 1];
+  // PEM-encoded CA certificates Mica uses to verify the member endpoint's server certificate. At least one entry is
+  // required.
+  repeated string pem_ca_chain = 3 [(validate.rules).repeated.min_items = 1];
+}
+
+// Result of creating an API token configuration.
+message CreateApiTokenConfigurationResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    // The configuration was created and is now in use.
+    STATUS_SUCCESS = 1;
+    // The configuration was not created; see `error`.
+    STATUS_ERROR = 2;
+  }
+  // Outcome of the call.
+  Status status = 1;
+
+  // Why the call failed. Set when `status` is not STATUS_SUCCESS.
+  micashared.common.v1.Error error = 2;
+  // Version of the new configuration.
+  int64 version = 3 [(validate.rules).int64.gte = 0];
+}
+
+// Request for the current API token configuration.
+message GetApiTokenConfigurationRequest {}
+
+// The current API token configuration.
+message GetApiTokenConfigurationResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    // `api_token_configuration` is set.
+    STATUS_SUCCESS = 1;
+    // The configuration could not be read; see `error`.
+    STATUS_ERROR = 2;
+    // No API token configuration exists.
+    STATUS_NOT_FOUND = 3;
+  }
+  // Outcome of the call.
+  Status status = 1;
+
+  // Why the call failed. Set when `status` is not STATUS_SUCCESS.
+  micashared.common.v1.Error error = 2;
+
+  // The configuration, including the token itself.
+  ApiTokenConfiguration api_token_configuration = 3;
+}
+
+// Request to change the existing API token configuration. Only the fields that are set are changed.
+message UpdateApiTokenConfigurationRequest {
+  // New header settings. Currently ignored: the header name and prefix cannot be changed by an update; create a new
+  // configuration to change them.
+  AuthenticationHeaderConfiguration header_configuration = 2;
+  // New token. Leave empty to keep the current one.
+  string api_token_value = 3;
+  // New PEM-encoded CA certificates for verifying the member endpoint's server certificate. Leave empty to keep the
+  // current ones.
+  repeated string pem_ca_chain = 4;
+}
+
+// Result of updating the API token configuration.
+message UpdateApiTokenConfigurationResponse {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    // The configuration was updated.
+    STATUS_SUCCESS = 1;
+    // The configuration was not updated; see `error`.
+    STATUS_ERROR = 2;
+    // No API token configuration exists to update; create one first.
+    STATUS_NOT_FOUND = 3;
+  }
+  // Outcome of the call.
+  Status status = 1;
+
+  // Why the call failed. Set when `status` is not STATUS_SUCCESS.
+  micashared.common.v1.Error error = 2;
+}

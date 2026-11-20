@@ -1,0 +1,37 @@
+// Copyright (c) 2022-2024 Mica. All rights reserved. All software, including, without limitation, all source
+// code and object code, is the intellectual property of Mica, Inc. and is protected by copyright, trademark and
+// other intellectual property laws (collective "Mica Software"). You may not use, copy, reproduce, download, store,
+// post, broadcast, transmit, modify, sell or make available to the public content from the Mica Software without a
+// valid license or the prior written approval of Mica, Inc. Mica, its logos, slogans, taglines,
+// products, feature names, and other trademarks are trademarks of Mica, Inc. and may not be used without
+// permission.
+
+syntax = "proto3";
+
+package micashared.common.v1;
+
+import "validate/validate.proto";
+
+option go_package = "micashared/common/v1;commonv1";
+option java_outer_classname = "PaginationProto";
+option java_package = "io.micashared.common.v1";
+option objc_class_prefix = "MICA";
+
+// Page-number pagination for search calls. Send it on the request to choose a page, and read it back on the response
+// to see the page returned and the total number of matches. If the request omits it, Mica returns the first page of
+// 25 records and does not count the total.
+message Pagination {
+  // Maximum number of records to return in the page, at most 10000. 0 means no limit.
+  int32 page_size = 1 [(validate.rules).int32 = {lte: 10000}];
+
+  // Zero-based page number: 0 is the first page. Mica skips `page_number` x `page_size` records.
+  int32 page_number = 2 [(validate.rules).int32 = {
+    gte: 0,
+    lte: 1000000
+  }];
+
+  // Total number of records that match the search, across all pages. Send 0 to have Mica count them and return the
+  // result here; send back the value you received to skip counting again on later pages. -1 means the total was not
+  // counted.
+  int64 total_count = 3 [(validate.rules).int64 = {gte: -1}];
+}
