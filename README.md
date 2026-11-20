@@ -7,10 +7,9 @@ A C++ client library for the [Mica](https://mica.io) network. Mica's API is [gRP
 Unlike the other Mica SDKs, this repository does not contain generated code. C++ generated code only compiles against the
 exact protobuf version that produced it, so one set of generated sources cannot serve every client. Instead this
 repository ships the [public protos](https://github.com/1080network/proto) (in `protos/`) and CMake generates the code
-when you build, with **your** installed protobuf and gRPC. Any protobuf and gRPC that provide CMake
-package files work: the SDK is built and tested in CI against the Ubuntu 24.04 packages (gRPC 1.51) and Homebrew's current
-versions, and was also tested with gRPC 1.66 and protobuf 28. Older distributions, such as Ubuntu 22.04 (protobuf 3.12),
-do not provide those CMake files.
+when you build, with **your** installed protobuf and gRPC. The SDK is built and tested in CI against the Ubuntu 24.04
+packages (protobuf 3.21, gRPC 1.51) and Homebrew's current versions, and was also tested with gRPC 1.66 and protobuf 28.
+Older distributions, such as Ubuntu 22.04 (protobuf 3.12, gRPC 1.30), are not supported.
 
 ## Libraries
 
@@ -24,7 +23,7 @@ One CMake library per role, so you only build the roles you play:
 
 ## Using it
 
-You need CMake 3.21 or later, a C++17 compiler, and protobuf and gRPC installed with their CMake packages (for example
+You need CMake 3.21 or later, a C++17 compiler, and protobuf and gRPC installed (for example
 `apt install libgrpc++-dev libprotobuf-dev protobuf-compiler-grpc`, `brew install grpc protobuf`, or vcpkg's `grpc`).
 Add the SDK to your project, for example with `FetchContent`:
 

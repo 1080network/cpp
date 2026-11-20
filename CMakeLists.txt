@@ -12,8 +12,20 @@ option(MICA_SDK_BUILD_EXAMPLES "Build the examples" ${PROJECT_IS_TOP_LEVEL})
 
 # The generated code is compiled against YOUR protobuf and gRPC: C++ generated code only builds against the
 # protobuf version that produced it, so this SDK ships the protos and generates the code at build time.
-find_package(Protobuf CONFIG REQUIRED)
+# Protobuf installed from source, vcpkg or Homebrew ships CMake package files; Debian and Ubuntu packages only support
+# CMake's built-in FindProtobuf module, so fall back to that.
+find_package(Protobuf CONFIG QUIET)
+if(NOT Protobuf_FOUND)
+  find_package(Protobuf REQUIRED)
+endif()
 find_package(gRPC CONFIG REQUIRED)
+
+# The gRPC plugin for protoc: a target when gRPC's CMake package defines one, otherwise the installed program
+if(TARGET gRPC::grpc_cpp_plugin)
+  set(MICA_GRPC_CPP_PLUGIN $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
+else()
+  find_program(MICA_GRPC_CPP_PLUGIN grpc_cpp_plugin REQUIRED)
+endif()
 
 set(MICA_PROTO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/protos)
 set(MICA_GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
@@ -32,7 +44,7 @@ function(mica_proto_library name)
   protobuf_generate(TARGET ${name} LANGUAGE cpp IMPORT_DIRS ${MICA_PROTO_DIR} PROTOC_OUT_DIR ${MICA_GEN_DIR})
   protobuf_generate(TARGET ${name} LANGUAGE grpc IMPORT_DIRS ${MICA_PROTO_DIR} PROTOC_OUT_DIR ${MICA_GEN_DIR}
     GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
-    PLUGIN "protoc-gen-grpc=$<TARGET_FILE:gRPC::grpc_cpp_plugin>")
+    PLUGIN "protoc-gen-grpc=${MICA_GRPC_CPP_PLUGIN}")
   set_target_properties(${name} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endfunction()
 
